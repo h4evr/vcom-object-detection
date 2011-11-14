@@ -1,0 +1,2 @@
+/usr/bin/ar cr libharris_detector.a  CMakeFiles/harris_detector.dir/harris_detector.cpp.o
+/usr/bin/ranlib libharris_detector.a

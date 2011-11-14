@@ -1,0 +1,1 @@
+/usr/bin/c++       CMakeFiles/vcom-object-detection.dir/main.cpp.o  -o bin/vcom-object-detection -rdynamic -lcxcore -lcv -lml -lhighgui -lcvaux detection/libharris_detector.a 
