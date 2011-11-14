@@ -3,3 +3,4 @@
 Makefile
 bin/
 CMakeFiles/
+CMakeCache.txt
