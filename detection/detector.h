@@ -15,7 +15,7 @@ class Detector {
          * @param img Image to extract feature from.
          * @returns Vector with feature points.
          */
-        virtual std::vector<cv::Point2f> run(cv::Mat& img) = 0;
+        virtual std::vector<cv::KeyPoint> run(cv::Mat& img) = 0;
 };
 
 #endif

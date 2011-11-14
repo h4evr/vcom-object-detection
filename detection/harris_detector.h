@@ -4,13 +4,18 @@
 #include "detector.h"
 
 class HarrisDetector : public Detector {
+    protected:
+        static HarrisDetector* instance;
+
     public:
         /**
          * Detect features on an image.
          * @param img Image to extract feature from.
          * @returns Vector with feature points.
          */
-        std::vector<cv::Point2f> run(cv::Mat& img);
+        std::vector<cv::KeyPoint> run(cv::Mat& img);
+
+        static HarrisDetector* getInstance();
 };
 
 #endif
