@@ -15,7 +15,32 @@ class HarrisDetector : public Detector {
          */
         std::vector<cv::KeyPoint> run(cv::Mat& img);
 
+        /**
+         * Retrieve the singleton instance of this Detector.
+         * @returns Instance of Detector.
+         */
         static HarrisDetector* getInstance();
+
+        /**
+         * The neighborhood size parameter to pass to the harris corner algorithm.
+         */
+        static int BLOCK_SIZE;
+
+        /**
+         * The aperture size for the Sobel operator.
+         */
+        static int APERTURE_SIZE;
+
+        /**
+         * The free parameter to pass to the harris corner algorithm.
+         */
+        static double K;
+
+        /**
+         * The threshold value to filter out bad corners.
+         */
+        static int THRESHOLD;
+
 };
 
 #endif
