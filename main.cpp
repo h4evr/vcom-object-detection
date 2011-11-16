@@ -8,8 +8,10 @@
 #include "description/surf_descriptor.h"
 
 #include "matching/bruteforce_matcher.h"
+#include "matching/flann_matcher.h"
 
-#define USE_HARRIS_DETECTOR 1
+#define USE_HARRIS_DETECTOR 0
+#define USE_BRUTEFORCE_MATCHER 0
 
 void dumpDescriptors(cv::Mat& descriptors) {
     std::cout << "Descriptors: " << descriptors.rows << std::endl;
@@ -43,7 +45,11 @@ int main(int argc, char* argv[]) {
 
     Descriptor* descriptor = SURFDescriptor::getInstance();
 
+#if USE_BRUTEFORCE_MATCHER
     Matcher* matcher = BruteForceMatcher::getInstance();
+#else
+    Matcher* matcher = FlannMatcher::getInstance();
+#endif
 
     std::vector<cv::KeyPoint> key_points_1 = detector->run(gray1);
     cv::Mat descriptors_1 = descriptor->getDescriptors(gray1, key_points_1);
