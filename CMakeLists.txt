@@ -6,6 +6,7 @@ SET(SRCS main.cpp)
 
 ADD_SUBDIRECTORY(detection)
 ADD_SUBDIRECTORY(description)
+ADD_SUBDIRECTORY(matching)
 
 ADD_EXECUTABLE(vcom-object-detection ${SRCS})
-TARGET_LINK_LIBRARIES(vcom-object-detection ${OpenCV_LIBS} harris_detector surf_detector surf_descriptor)
+TARGET_LINK_LIBRARIES(vcom-object-detection ${OpenCV_LIBS} harris_detector surf_detector surf_descriptor bruteforce_matcher)
