@@ -5,6 +5,7 @@ SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(SRCS main.cpp)
 
 ADD_SUBDIRECTORY(detection)
+ADD_SUBDIRECTORY(description)
 
 ADD_EXECUTABLE(vcom-object-detection ${SRCS})
-TARGET_LINK_LIBRARIES(vcom-object-detection ${OpenCV_LIBS} harris_detector)
+TARGET_LINK_LIBRARIES(vcom-object-detection ${OpenCV_LIBS} harris_detector sift_descriptor)
