@@ -3,7 +3,10 @@
 #include <iostream>
 
 #include "detection/harris_detector.h"
+#include "detection/surf_detector.h"
 #include "description/surf_descriptor.h"
+
+#define USE_HARRIS 1
 
 int main(int argc, char* argv[]) {
     cv::Mat img = cv::imread("caltech_data/airplanes_train/img001.jpg", -1);
@@ -15,16 +18,16 @@ int main(int argc, char* argv[]) {
     //cv::namedWindow("original");
     //cv::imshow("original", img);
 
+#if USE_HARRIS
     Detector* detector = HarrisDetector::getInstance();
-
     HarrisDetector::BLOCK_SIZE = 16;
     HarrisDetector::THRESHOLD = 100;
     HarrisDetector::K = 0.02;
+#else
+    Detector* detector = SURFDetector::getInstance();
+#endif
 
     std::vector<cv::KeyPoint> key_points = detector->run(gray);
-
-    cv::Mat output;
-    cv::drawKeypoints(img, key_points, output);
 
     cv::Mat descriptors = SURFDescriptor::getInstance()->getDescriptors(gray, key_points);
 
@@ -37,7 +40,9 @@ int main(int argc, char* argv[]) {
         std::cout << std::endl;
     }
 
-    
+    cv::Mat output;
+    cv::drawKeypoints(img, key_points, output);
+
     cv::namedWindow("harris");
     cv::imshow("harris", output);
 
