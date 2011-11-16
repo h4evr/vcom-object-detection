@@ -14,11 +14,9 @@ std::vector<cv::KeyPoint> HarrisDetector::run(cv::Mat& img) {
     std::vector<cv::KeyPoint> res;
 
     cv::Mat corners = cv::Mat::zeros(img.size(), CV_32FC1);
-    cv::Mat grayscale, corners_norm, corners_norm_scaled;
+    cv::Mat corners_norm, corners_norm_scaled;
 
-    cv::cvtColor(img, grayscale, CV_BGR2GRAY);
-
-    cv::cornerHarris(grayscale,
+    cv::cornerHarris(img,
                      corners,
                      HarrisDetector::BLOCK_SIZE,
                      HarrisDetector::APERTURE_SIZE,

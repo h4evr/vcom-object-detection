@@ -6,7 +6,7 @@
 
 class Descriptor {
     public:
-        virtual cv::Mat getDescriptors(std::vector<cv::KeyPoint>& keypoints) = 0;
+        virtual cv::Mat getDescriptors(cv::Mat& img, std::vector<cv::KeyPoint>& keypoints) = 0;
 };
 
 #endif
