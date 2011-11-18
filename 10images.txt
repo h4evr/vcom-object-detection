@@ -1,0 +1,10 @@
+caltech_data/airplanes_train/img001.jpg
+caltech_data/airplanes_train/img002.jpg
+caltech_data/airplanes_train/img003.jpg
+caltech_data/airplanes_train/img004.jpg
+caltech_data/airplanes_train/img005.jpg
+caltech_data/airplanes_train/img006.jpg
+caltech_data/airplanes_train/img007.jpg
+caltech_data/airplanes_train/img008.jpg
+caltech_data/airplanes_train/img009.jpg
+caltech_data/airplanes_train/img010.jpg
