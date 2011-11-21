@@ -8,6 +8,7 @@ class Matcher {
 
     public:
         virtual std::vector<cv::DMatch> match(const cv::Mat& queryDescriptors, const cv::Mat& trainDescriptors) = 0;
+        virtual cv::DescriptorMatcher* getOpenCVMatcher() = 0;
 };
 
 #endif

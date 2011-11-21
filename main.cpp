@@ -1,7 +1,7 @@
 #include <cv.h>
 #include <highgui.h>
 #include <iostream>
-
+#include <fstream>
 #include "detection/harris_detector.h"
 #include "detection/surf_detector.h"
 
@@ -9,6 +9,8 @@
 
 #include "matching/bruteforce_matcher.h"
 #include "matching/flann_matcher.h"
+
+#include "bow/bow_descriptor.h"
 
 #define USE_HARRIS_DETECTOR 0
 #define USE_BRUTEFORCE_MATCHER 0
@@ -22,6 +24,31 @@ void dumpDescriptors(cv::Mat& descriptors) {
         }
         std::cout << std::endl;
     }
+}
+
+cv::Mat loadVocabulary(const char* filename) {
+
+    std::ifstream in(filename);
+    std::string buffer;
+
+    int cols, rows;
+
+    in >> cols;
+    in >> rows;
+
+    cv::Mat out(rows, cols, CV_32FC1);
+
+    int j = 0;
+    while(!in.eof()) {
+        for(int i = 0; i < cols; ++i) {
+            in >> out.at<float>(j, i);
+        }
+        ++j;
+    }
+
+    in.close();
+
+    return out;
 }
 
 int main(int argc, char* argv[]) {
@@ -61,6 +88,13 @@ int main(int argc, char* argv[]) {
 
     //dumpDescriptors(descriptors_1);
     //dumpDescriptors(descriptors_2);
+
+    cv::Mat vocabulary = loadVocabulary("vocabulary.dat");
+
+    BOWDescriptor bowdesc(descriptor, matcher, vocabulary);
+    cv::Mat histDescriptor = bowdesc.extractBOWHistogram(gray1, key_points_1);
+
+    dumpDescriptors(histDescriptor);
 
     cv::Mat output_1,
             output_2,

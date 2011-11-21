@@ -11,5 +11,5 @@ ADD_SUBDIRECTORY(bow)
 
 ADD_EXECUTABLE(vcom-object-detection ${SRCS})
 ADD_EXECUTABLE(trainer trainer.cpp)
-TARGET_LINK_LIBRARIES(vcom-object-detection ${OpenCV_LIBS} harris_detector surf_detector surf_descriptor bruteforce_matcher flann_matcher bow_kmeans)
+TARGET_LINK_LIBRARIES(vcom-object-detection ${OpenCV_LIBS} harris_detector surf_detector surf_descriptor bruteforce_matcher flann_matcher bow_descriptor)
 TARGET_LINK_LIBRARIES(trainer ${OpenCV_LIBS} harris_detector surf_detector surf_descriptor bruteforce_matcher flann_matcher bow_kmeans)

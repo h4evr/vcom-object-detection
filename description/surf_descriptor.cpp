@@ -2,11 +2,14 @@
 
 SURFDescriptor* SURFDescriptor::instance = NULL;
 
+SURFDescriptor::SURFDescriptor() :
+    extractor(new cv::SurfDescriptorExtractor()) {
+}
+
 cv::Mat SURFDescriptor::getDescriptors(cv::Mat& img, std::vector<cv::KeyPoint>& keyPoints) {
     cv::Mat descriptors;
-    cv::SurfDescriptorExtractor extractor;
 
-    extractor.compute( img, keyPoints, descriptors);
+    extractor->compute( img, keyPoints, descriptors);
 
     return descriptors;
 }
@@ -17,5 +20,9 @@ SURFDescriptor* SURFDescriptor::getInstance() {
     }
 
     return instance;
+}
+
+cv::DescriptorExtractor* SURFDescriptor::getOpenCVDescriptor() {
+    return (cv::DescriptorExtractor*)extractor;
 }
 

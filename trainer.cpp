@@ -12,6 +12,7 @@
 #include "matching/flann_matcher.h"
 
 #include "bow/bow_kmeans.h"
+#include "bow/bow_descriptor.h"
 
 #define USE_HARRIS_DETECTOR 0
 #define USE_BRUTEFORCE_MATCHER 0
@@ -35,6 +36,7 @@ std::vector<std::string> load_list_of_files(const char* file) {
 }
 
 void dumpDescriptors(cv::Mat& descriptors) {
+    std::cout << descriptors.cols << " " << descriptors.rows << std::endl;
     for(int i = 0; i < descriptors.rows; ++i) {
         for(int j = 0; j < descriptors.cols; ++j) {
             std::cout << descriptors.at<float>(i, j) << " ";
