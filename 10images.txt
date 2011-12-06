@@ -1,3 +1,4 @@
+-airplane
 caltech_data/airplanes_train/img001.jpg
 caltech_data/airplanes_train/img002.jpg
 caltech_data/airplanes_train/img003.jpg
@@ -8,3 +9,14 @@ caltech_data/airplanes_train/img007.jpg
 caltech_data/airplanes_train/img008.jpg
 caltech_data/airplanes_train/img009.jpg
 caltech_data/airplanes_train/img010.jpg
+-car
+caltech_data/cars_train/img185.jpg
+caltech_data/cars_train/img341.jpg
+caltech_data/cars_train/img192.jpg
+caltech_data/cars_train/img162.jpg
+caltech_data/cars_train/img310.jpg
+caltech_data/cars_train/img123.jpg
+caltech_data/cars_train/img152.jpg
+caltech_data/cars_train/img103.jpg
+caltech_data/cars_train/img208.jpg
+caltech_data/cars_train/img405.jpg

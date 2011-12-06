@@ -1,5 +1,5 @@
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <fstream>
 #include "detection/harris_detector.h"
@@ -15,12 +15,13 @@
 #define USE_HARRIS_DETECTOR 0
 #define USE_BRUTEFORCE_MATCHER 0
 
+template<class T>
 void dumpDescriptors(cv::Mat& descriptors) {
     std::cout << "Descriptors: " << descriptors.rows << std::endl;
 
     for(int i = 0; i < descriptors.rows; ++i) {
         for(int j = 0; j < descriptors.cols; ++j) {
-            std::cout << descriptors.at<float>(i, j) << " ";
+            std::cout << descriptors.at<T>(i, j) << " ";
         }
         std::cout << std::endl;
     }
@@ -51,15 +52,50 @@ cv::Mat loadVocabulary(const char* filename) {
     return out;
 }
 
+cv::Mat loadInputData(const char* file, Detector* detector, cv::Ptr<cv::BOWImgDescriptorExtractor> extractor) {
+    //std::cerr << "Loading file " << file << std::endl;
+    cv::Mat img = cv::imread(file, 0);
+    std::vector<cv::KeyPoint> keyPoints;
+    cv::Mat descriptor;
+
+    keyPoints = detector->run(img);
+    extractor->compute(img, keyPoints, descriptor);
+
+    return descriptor;
+}
+
+std::map<int, std::string> loadResponses(const char* filename) {
+    std::map<int, std::string> res;
+    std::ifstream in(filename);
+
+    if(in.is_open()) {
+        int resp;
+        std::string className;
+
+        while(!in.eof()) {
+            in >> resp;
+            in >> className;
+            res.insert(std::pair<int, std::string>(resp, className));
+        }
+
+        in.close();
+    }
+
+    return res;
+}
+
 int main(int argc, char* argv[]) {
-    cv::Mat img1 = cv::imread("caltech_data/airplanes_train/img001.jpg", -1);
-    cv::Mat img2 = cv::imread("caltech_data/airplanes_train/img002.jpg", -1);
 
-    cv::Mat gray1,
-            gray2;
+    if(argc <= 4) {
+        std::cerr << "Usage: ./vcom-object-detection vocabulary svm responses file1 [file2] [...]" << std::endl;
+        return -1;
+    }
 
-    cv::cvtColor(img1, gray1, CV_BGR2GRAY);
-    cv::cvtColor(img2, gray2, CV_BGR2GRAY);
+    const char* voc_file = argv[1];
+    const char* svm_file = argv[2];
+    const char* res_file = argv[3];
+
+    std::map<int, std::string> resp_to_class = loadResponses(res_file);
 
 #if USE_HARRIS_DETECTOR
     Detector* detector = HarrisDetector::getInstance();
@@ -71,57 +107,27 @@ int main(int argc, char* argv[]) {
 #endif
 
     Descriptor* descriptor = SURFDescriptor::getInstance();
-
-#if USE_BRUTEFORCE_MATCHER
-    Matcher* matcher = BruteForceMatcher::getInstance();
-#else
     Matcher* matcher = FlannMatcher::getInstance();
-#endif
 
-    std::vector<cv::KeyPoint> key_points_1 = detector->run(gray1);
-    cv::Mat descriptors_1 = descriptor->getDescriptors(gray1, key_points_1);
+    cv::Mat vocabulary = loadVocabulary(voc_file);
 
-    std::vector<cv::KeyPoint> key_points_2 = detector->run(gray2);
-    cv::Mat descriptors_2 = descriptor->getDescriptors(gray1, key_points_2);
+    cv::Ptr<cv::BOWImgDescriptorExtractor> extractor = new cv::BOWImgDescriptorExtractor(descriptor->getOpenCVDescriptor(), matcher->getOpenCVMatcher());
+    extractor->setVocabulary(vocabulary);
 
-    std::vector<cv::DMatch> matches = matcher->match(descriptors_1, descriptors_2);
+    cv::SVM svm;
+    svm.load(svm_file);
 
-    //dumpDescriptors(descriptors_1);
-    //dumpDescriptors(descriptors_2);
+    cv::Mat inputData;
 
-    cv::Mat vocabulary = loadVocabulary("vocabulary.dat");
+    for(int i = 4; i < argc; ++i) {
+        inputData = loadInputData(argv[i], detector, extractor);
+        int resp = (int)svm.predict(inputData, false);
+        std::cout << argv[i] << ": " << resp_to_class[resp] << " (" << resp << ")" << std::endl;
+    }
 
-    BOWDescriptor bowdesc(descriptor, matcher, vocabulary);
-    cv::Mat histDescriptor = bowdesc.extractBOWHistogram(gray1, key_points_1);
-
-    dumpDescriptors(histDescriptor);
-
-    cv::Mat output_1,
-            output_2,
-            output_matches;
-
-    cv::drawKeypoints(img1, key_points_1, output_1);
-    cv::drawKeypoints(img2, key_points_2, output_2);
-
-    cv::drawMatches(img1, key_points_1,
-                    img2, key_points_2,
-                    matches,
-                    output_matches);
-
-    cv::namedWindow("output_1");
-    cv::imshow("output_1", output_1);
-
-    cv::namedWindow("output_2");
-    cv::imshow("output_2", output_2);
-
-    cv::namedWindow("output_matches");
-    cv::imshow("output_matches", output_matches);
-
-    cv::waitKey();
-
-    delete detector;
-    delete descriptor;
     delete matcher;
+    delete descriptor;
+    delete detector;
 
     return 0;
 }
