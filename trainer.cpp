@@ -6,8 +6,10 @@
 
 #include "detection/harris_detector.h"
 #include "detection/surf_detector.h"
+#include "detection/sift_detector.h"
 
 #include "description/surf_descriptor.h"
+#include "description/sift_descriptor.h"
 
 #include "matching/bruteforce_matcher.h"
 #include "matching/flann_matcher.h"
@@ -15,9 +17,23 @@
 #include "bow/bow_kmeans.h"
 #include "bow/bow_descriptor.h"
 
-#define USE_HARRIS_DETECTOR 0
-#define USE_BRUTEFORCE_MATCHER 0
+#include "timer.h"
 
+// CONF INDEX:
+//   0: detector
+//   1: descriptor
+//   2: matcher
+// CONF DETECTOR:
+//   0: HARRIS
+//   1: SURF
+//   2: SIFT
+// CONF DESCRIPTOR:
+//   0: SIFT
+//   1: SURF
+// CONF MATCHER:
+//   0: BRUTEFORCE
+//   1: FLANN BASED
+int confs[] = { 1, 1, 1 };
 
 std::map<std::string, std::vector<std::string> > load_list_of_files(const char* file) {
     std::vector<std::string> files;
@@ -73,7 +89,7 @@ void dumpDescriptors(std::ostream& strm, cv::Mat& descriptors) {
 }
 
 void usage() {
-    std::cerr << "Usage: trainer list_of_images.txt num_of_cluster_centers out_vocabulary_file out_svm_path out_responses_path" << std::endl;
+    std::cerr << "Usage: trainer confs_file list_of_images.txt num_of_cluster_centers out_vocabulary_file out_svm_path out_responses_path" << std::endl;
 }
 
 cv::Mat collectTrainData(Detector* detector, cv::Ptr<cv::BOWImgDescriptorExtractor> extractor, std::vector<std::string>& images) {
@@ -108,32 +124,115 @@ cv::Mat collectTrainData(Detector* detector, cv::Ptr<cv::BOWImgDescriptorExtract
     return trainData;
 }
 
+void loadConfs(const char* filename) {
+    std::ifstream in(filename);
+    std::string buffer;
+
+    if(in.is_open()) {
+        if(!in.eof()) {
+            in >> buffer;
+            if(buffer.compare("harris") == 0) {
+                confs[0] = 0;
+            } else if(buffer.compare("surf") == 0) {
+                confs[0] = 1;
+            } else if(buffer.compare("sift") == 0) {
+                confs[0] = 2;
+            }
+        } else {
+            std::cerr << "Invalid configuration file!" << std::endl;
+            exit(-1);
+        }
+
+        if(!in.eof()) {
+            in >> buffer;
+            if(buffer.compare("sift") == 0) {
+                confs[1] = 0;
+            } else if(buffer.compare("surf") == 0) {
+                confs[1] = 1;
+            }
+        } else {
+            std::cerr << "Invalid configuration file!" << std::endl;
+            exit(-1);
+        }
+
+        if(!in.eof()) {
+            in >> buffer;
+            if(buffer.compare("bruteforce") == 0) {
+                confs[2] = 0;
+            } else if(buffer.compare("flann") == 0) {
+                confs[2] = 1;
+            }
+        } else {
+            std::cerr << "Invalid configuration file!" << std::endl;
+            exit(-1);
+        }
+        in.close();
+    } else {
+        std::cerr << "Couldn't open configuration file! Exiting!" << std::endl;
+        exit(-1);
+    }
+}
+
 int main(int argc, char* argv[]) {
-    if(argc != 6) {
+    if(argc != 7) {
         usage();
         return -1;
     }
 
-    const char* file = argv[1];
-    int num_of_clusters = atoi(argv[2]);
-    const char* out_voc = argv[3];
-    const char* out_file = argv[4];
-    const char* resp_file = argv[5];
+    Timer tmr;
+
+    const char* confs_file = argv[1];
+    const char* file = argv[2];
+    int num_of_clusters = atoi(argv[3]);
+    const char* out_voc = argv[4];
+    const char* out_file = argv[5];
+    const char* resp_file = argv[6];
+
+    loadConfs(confs_file);
+
     std::map<std::string, std::vector<std::string> > class_images = load_list_of_files(file);
 
-    cv::Mat img, gray;
+    cv::Mat gray;
 
-#if USE_HARRIS_DETECTOR
-    Detector* detector = HarrisDetector::getInstance();
-    HarrisDetector::BLOCK_SIZE = 16;
-    HarrisDetector::THRESHOLD = 100;
-    HarrisDetector::K = 0.02;
-#else
-    Detector* detector = SURFDetector::getInstance();
-#endif
+    Detector* detector;
 
-    Descriptor* descriptor = SURFDescriptor::getInstance();
-    Matcher* matcher = FlannMatcher::getInstance();
+    switch(confs[0]) {
+    case 0:
+        detector = HarrisDetector::getInstance();
+        HarrisDetector::BLOCK_SIZE = 16;
+        HarrisDetector::THRESHOLD = 100;
+        HarrisDetector::K = 0.02;
+        break;
+    case 1:
+        detector = SURFDetector::getInstance();
+        break;
+
+    case 2:
+        detector = SIFTDetector::getInstance();
+        break;
+    };
+
+    Descriptor* descriptor;
+
+    switch(confs[1]) {
+    case 0:
+        descriptor = SIFTDescriptor::getInstance();
+        break;
+    case 1:
+        descriptor = SURFDescriptor::getInstance();
+        break;
+    };
+
+    Matcher* matcher;
+
+    switch(confs[2]) {
+        case 0:
+            matcher = BruteForceMatcher::getInstance();
+            break;
+        case 1:
+            matcher = FlannMatcher::getInstance();
+            break;
+    };
 
     BOWKMeans trainer(num_of_clusters);
 
@@ -145,6 +244,10 @@ int main(int argc, char* argv[]) {
 
     unsigned int totalImages = 0;
 
+    float descriptors_time = 0.0f;
+    float clustering_time = 0.0f;
+    float training_time = 0.0f;
+
     for(; it != class_images.end(); ++it) {
 
         std::cerr << "Analyzing images of class: " << it->first << std::endl;
@@ -155,27 +258,30 @@ int main(int argc, char* argv[]) {
             ++totalImages;
 
             std::cerr << (int)(((double)i / (double)images.size()) * 100.0) << "% Loading image: " << images[i] << std::endl;
-            img = cv::imread(images[i].c_str(), -1);
-            cvtColor(img, gray, CV_BGR2GRAY);
+            gray = cv::imread(images[i].c_str(), 0);
 
+            tmr.Start();
             key_points = detector->run(gray);
             descriptors = descriptor->getDescriptors(gray, key_points);
+            tmr.Stop();
+            descriptors_time += tmr.GetElapsedTime();
 
             trainer.add(descriptors);
 
             gray.release();
-            img.release();
             descriptors.release();
         }
     }
 
     if(totalImages > 0) {
         std::cerr << "Clustering centers..." << std::endl;
+        tmr.Start();
         cv::Mat vocabulary = trainer.run();
+        tmr.Stop();
+        clustering_time = tmr.GetElapsedTime();
 
         std::ofstream of(out_voc);
         if(of.is_open()) {
-
             dumpDescriptors<float>(of, vocabulary);
             of.close();
         }
@@ -224,14 +330,22 @@ int main(int argc, char* argv[]) {
         trainData.resize(totalRows);
         responses.resize(totalRows);
 
-        dumpDescriptors<float>(std::cout, trainData);
+        //dumpDescriptors<float>(std::cout, trainData);
 
         std::cerr << "Training the SVM..." << std::endl;
+
+        tmr.Start();
         svm.train(trainData, responses, cv::Mat(), cv::Mat(), params);
+        tmr.Stop();
+        training_time = tmr.GetElapsedTime();
         svm.save(out_file);
 
         strm_responses.close();
     }
+
+    std::cerr << "TIME DESCRIPTION: " << descriptors_time << std::endl;
+    std::cerr << "TIME CLUSTERING: " << clustering_time << std::endl;
+    std::cerr << "TIME TRAINING: " << training_time << std::endl;
 
     delete matcher;
     delete detector;
